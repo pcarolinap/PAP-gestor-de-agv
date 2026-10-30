@@ -1,0 +1,186 @@
+ANDA LA - MODELO DE DADOS DA BASE DE DADOS
+==========================================
+
+1. OBJETIVO E ESTADO ATUAL
+--------------------------
+Este documento descreve o modelo relacional proposto para guardar os dados do sistema ANDA LA.
+
+Atualmente, a aplicacao Web guarda o estado no LocalStorage do navegador. O servidor Node.js
+mantem uma base de dados simulada apenas em memoria. Ainda nao existe uma base SQL ligada ao
+projeto. O modelo abaixo organiza os dados existentes e serve de referencia para uma futura
+migracao para SQLite, PostgreSQL ou outro sistema relacional.
+
+Tipos indicados (INTEGER, VARCHAR, BOOLEAN, DECIMAL, DATETIME) sao tipos logicos de referencia;
+podem ser ajustados ao sistema de base de dados escolhido.
+
+2. RELACIONAMENTOS PRINCIPAIS
+-----------------------------
+AGV 1 --- N TAREFAS
+CAIXAS 1 --- N TAREFAS
+ZONAS 1 --- N TAREFAS (como origem e como destino)
+ROTAS 1 --- N ROTA_PARAGENS
+ZONAS 1 --- N ROTA_PARAGENS
+UTILIZADORES 1 --- N TAREFAS (operador responsavel)
+
+Uma rota contem varias paragens ordenadas. Cada paragem aponta para uma zona do mapa.
+Uma tarefa de transporte identifica uma caixa, uma origem, um destino e o AGV responsavel.
+
+3. TABELAS
+----------
+
+TABELA: AGV
+-----------
+Guarda a identificacao e a telemetria atual de cada veiculo AGV.
+
+- id_agv             VARCHAR(30)  PRIMARY KEY
+- nome               VARCHAR(100) NOT NULL
+- estado             VARCHAR(20)  NOT NULL
+- bateria_pct        DECIMAL(5,2) NOT NULL
+- tensao_volts       DECIMAL(6,2)
+- corrente_amp       DECIMAL(6,2)
+- velocidade_m_s     DECIMAL(6,2)
+- codigo_zona_atual  VARCHAR(30)  FOREIGN KEY -> ZONAS.codigo
+- posicao_x          DECIMAL(10,2)
+- posicao_y          DECIMAL(10,2)
+- orientacao_rad     DECIMAL(10,6)
+- id_tarefa_atual    VARCHAR(30)  NULL, FOREIGN KEY -> TAREFAS.id_tarefa
+- id_caixa_transportada VARCHAR(30) NULL, FOREIGN KEY -> CAIXAS.id_caixa
+- rssi_dbm           INTEGER
+- ip_esp32           VARCHAR(45)
+- hardware_ligado    BOOLEAN
+- sensor_obstaculo   BOOLEAN
+- seguidor_linha_ok  BOOLEAN
+
+Estados usados no projeto: online, prep, moving, charging, error, offline.
+A tabela guarda a telemetria mais recente; o historico de eventos fica em REGISTOS.
+
+TABELA: ZONAS
+--------------
+Representa os locais e pontos de paragem existentes no mapa da fabrica.
+
+- id_zona       VARCHAR(30)  PRIMARY KEY
+- codigo        VARCHAR(30)  NOT NULL UNIQUE
+- nome          VARCHAR(120) NOT NULL
+- posicao_x     DECIMAL(10,2) NOT NULL
+- posicao_y     DECIMAL(10,2) NOT NULL
+- cor           VARCHAR(10)
+- icone         VARCHAR(60)
+
+Zonas iniciais do projeto: Zona A, Zona B, Zona C, Zona D e Estacao Carga.
+
+TABELA: ROTAS
+--------------
+Guarda as rotas predefinidas que podem ser geridas e executadas pelo AGV.
+
+- id_rota       VARCHAR(30)  PRIMARY KEY
+- nome          VARCHAR(100) NOT NULL UNIQUE
+- criada_em     DATETIME     NULL
+- atualizada_em DATETIME     NULL
+
+Exemplos existentes: Ronda de Producao e Abastecimento e Carga.
+
+TABELA: ROTA_PARAGENS
+---------------------
+Associa uma rota as zonas que deve percorrer e conserva a ordem das paragens.
+A chave primaria composta impede repetir o mesmo numero de ordem dentro da rota.
+
+- id_rota       VARCHAR(30) NOT NULL, FOREIGN KEY -> ROTAS.id_rota
+- ordem         INTEGER     NOT NULL
+- codigo_zona   VARCHAR(30) NOT NULL, FOREIGN KEY -> ZONAS.codigo
+
+Chave primaria: (id_rota, ordem)
+Exemplo: Ronda de Producao -> Zona A (1), Zona B (2), Zona D (3), Zona C (4), Zona A (5).
+
+TABELA: CAIXAS
+---------------
+Guarda o inventario de caixas e a sua identificacao RFID/QR.
+
+- id_caixa       VARCHAR(30)  PRIMARY KEY
+- tag_rfid       VARCHAR(80)  UNIQUE
+- codigo_qr      VARCHAR(100) UNIQUE
+- descricao      VARCHAR(200) NOT NULL
+- conteudo       TEXT
+- peso_kg        DECIMAL(8,2)
+- codigo_zona    VARCHAR(30)  NULL, FOREIGN KEY -> ZONAS.codigo
+- estado         VARCHAR(20)  NOT NULL
+- atualizada_em  DATETIME
+
+Estados usados no projeto: disponivel, em_transito, entregue.
+
+TABELA: TAREFAS
+----------------
+Representa ordens de transporte de uma caixa entre duas zonas.
+
+- id_tarefa       VARCHAR(30)  PRIMARY KEY
+- id_caixa        VARCHAR(30)  NOT NULL, FOREIGN KEY -> CAIXAS.id_caixa
+- id_agv          VARCHAR(30)  NOT NULL, FOREIGN KEY -> AGV.id_agv
+- codigo_origem   VARCHAR(30)  NOT NULL, FOREIGN KEY -> ZONAS.codigo
+- codigo_destino  VARCHAR(30)  NOT NULL, FOREIGN KEY -> ZONAS.codigo
+- estado          VARCHAR(25)  NOT NULL
+- prioridade      VARCHAR(20)  NOT NULL
+- criada_em       DATETIME     NOT NULL
+- concluida_em    DATETIME     NULL
+- id_operador     VARCHAR(30)  NULL, FOREIGN KEY -> UTILIZADORES.id_utilizador
+
+Estados usados no projeto: aguardando, preparacao, em_movimento, concluida, erro.
+Prioridades usadas no projeto: normal, alta.
+O modelo atual guarda o operador como texto; numa base relacional deve ser usado id_operador.
+A rota predefinida nao esta atualmente ligada a uma tarefa. Se essa associacao for necessaria,
+adicionar o campo opcional id_rota como FOREIGN KEY -> ROTAS.id_rota.
+
+TABELA: UTILIZADORES
+--------------------
+Guarda as contas de acesso e os respetivos papeis no sistema.
+
+- id_utilizador  VARCHAR(30)  PRIMARY KEY
+- username      VARCHAR(120) NOT NULL UNIQUE
+- nome          VARCHAR(120) NOT NULL
+- password_hash VARCHAR(255) NOT NULL
+- perfil        VARCHAR(30)  NOT NULL
+- ativo         BOOLEAN      NOT NULL
+
+Perfis existentes: Administrador, Supervisor e Operador.
+Por seguranca, uma base de dados real deve guardar apenas o hash da palavra-passe, nunca o texto
+original. O utilizador autenticado atual deve ser tratado como sessao, nao como uma tabela separada.
+
+TABELA: ALERTAS
+----------------
+Guarda avisos operacionais ou de manutencao apresentados no sistema.
+
+- id_alerta   VARCHAR(30)  PRIMARY KEY
+- nivel       VARCHAR(20)  NOT NULL
+- titulo      VARCHAR(120) NOT NULL
+- mensagem    TEXT         NOT NULL
+- ativo       BOOLEAN      NOT NULL
+- criado_em   DATETIME
+
+TABELA: REGISTOS
+----------------
+Historico de eventos, operacoes e erros para auditoria.
+
+- id_registo  VARCHAR(30) PRIMARY KEY
+- tipo        VARCHAR(20) NOT NULL
+- mensagem    TEXT        NOT NULL
+- data_hora   DATETIME    NOT NULL
+
+Tipos usados no projeto: info, success, warning e error.
+
+4. REGRAS DE INTEGRIDADE RECOMENDADAS
+-------------------------------------
+- O codigo de cada zona deve ser unico.
+- O nome de cada rota deve ser unico.
+- Uma rota deve ter pelo menos duas paragens validas e ordenadas.
+- A ordem das paragens comeca em 1 e nao pode repetir dentro da mesma rota.
+- A origem e o destino de uma tarefa devem ser zonas existentes e diferentes.
+- Uma tarefa deve referenciar uma caixa e um AGV existentes.
+- Uma caixa associada a uma tarefa ativa nao deve ser eliminada.
+- O estado e a prioridade devem aceitar apenas os valores indicados neste documento.
+- Eliminacoes devem preservar o historico de tarefas e registos; preferir desativacao ou restricoes
+  de chave estrangeira em vez de apagar dados relacionados automaticamente.
+
+5. NOTA DE IMPLEMENTACAO
+------------------------
+As estruturas deste documento representam o modelo relacional recomendado. Os nomes das
+propriedades na aplicacao JavaScript podem diferir dos nomes das colunas SQL. A migracao para uma
+base de dados real exige criar as tabelas, configurar as chaves estrangeiras e adaptar o servidor
+para ler e escrever nessa base de dados.

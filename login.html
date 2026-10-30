@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Acesso seguro ao painel de controlo da ANDA LÁ.">
+  <title>Login — ANDA LÁ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">
+          <span>AL</span>
+        </div>
+        <div>
+          <p class="eyebrow">Plataforma de gestão</p>
+          <h1>ANDA LÁ</h1>
+          <p class="brand-subtitle">Autonomous Navigation &amp; Delivery Assistant</p>
+        </div>
+      </div>
+
+      <div class="login-header">
+        <p class="section-kicker">Acesso ao sistema</p>
+        <h2 id="login-title">Bem-vindo, utilizador</h2>
+        <p>Identifique-se com o seu identificador. O cargo será atribuído pelo administrador.</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="username">Identificador</label>
+          <div class="input-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0"/></svg>
+            <input id="username" name="username" type="text" autocomplete="username" placeholder="Ex.: operador1" minlength="3" required>
+          </div>
+          <small class="field-error" id="usernameError"></small>
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label for="password">Palavra-passe</label>
+            <button type="button" class="text-button" id="togglePassword">Mostrar</button>
+          </div>
+          <div class="input-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2m-11 0h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/></svg>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Introduza a palavra-passe" minlength="6" required>
+          </div>
+          <small class="field-error" id="passwordError"></small>
+        </div>
+
+        <div class="admin-role-note">
+          <span aria-hidden="true">✓</span>
+          <p>O cargo da conta é definido e gerenciado pelo administrador.</p>
+        </div>
+
+        <label class="remember-row">
+          <input id="rememberSession" type="checkbox" checked>
+          <span class="custom-checkbox" aria-hidden="true"></span>
+          <span>Manter sessão activa neste dispositivo</span>
+        </label>
+
+        <button class="login-button" type="submit">
+          <span>Entrar no sistema</span>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+
+        <div class="form-message" id="formMessage" role="alert" aria-live="polite"></div>
+      </form>
+
+
+
+
+        <!-- CONTAS PROVISORIAS -->
+      <section class="demo-accounts" aria-labelledby="demo-accounts-title">
+        <div class="demo-accounts-heading">
+          <div>
+            <p class="section-kicker">Acesso provisório</p>
+            <h3 id="demo-accounts-title">Contas de demonstração</h3>
+          </div>
+          <span>Sem seleção de cargo</span>
+        </div>
+        <div class="demo-account-list">
+          <button class="demo-account" type="button" data-username="admin@andalala.pt" data-password="admin123">
+            <span class="demo-account-role">Administrador</span>
+            <strong>admin@andalala.pt</strong>
+            <small>admin123</small>
+          </button>
+          <button class="demo-account" type="button" data-username="operador@andalala.pt" data-password="operador123">
+            <span class="demo-account-role">Operador</span>
+            <strong>operador@andalala.pt</strong>
+            <small>operador123</small>
+          </button>
+          <button class="demo-account" type="button" data-username="supervisor@andalala.pt" data-password="supervisor123">
+            <span class="demo-account-role">Supervisor</span>
+            <strong>supervisor@andalala.pt</strong>
+            <small>supervisor123</small>
+          </button>
+        </div>
+        <p class="demo-disclaimer">Estas contas são apenas para demonstração. Os cargos reais devem ser definidos pelo administrador.</p>
+      </section>
+
+     <!-- CONTAS PROVISORIAS -->
+
+
+
+
+
+
+      <p class="copyright">© 2026 ANDA LÁ · Sistema de automação logística</p>
+    </section>
+
+    <aside class="system-visual" aria-label="Informações do sistema">
+      <div class="visual-grid" aria-hidden="true"></div>
+      <div class="system-status">
+        <span class="status-dot"></span>
+        <span>Serviço online</span>
+      </div>
+
+      <div class="visual-content">
+        <p class="visual-kicker">Sistema integrado</p>
+        <h2>Controle.<br><span>Rastreabilidade.</span><br>Automação.</h2>
+        <p class="visual-description">Uma plataforma única para gerir operações, tarefas, equipamento e registos do AGV.</p>
+      </div>
+
+      <div class="system-metrics">
+        <div>
+          <strong>AGV-01</strong>
+          <span>Unidade activa</span>
+        </div>
+        <div>
+          <strong>99.4%</strong>
+          <span>Eficácia</span>
+        </div>
+        <div>
+          <strong>24/7</strong>
+          <span>Monitorização</span>
+        </div>
+      </div>
+
+      <div class="visual-footer">
+        <span>ESP32 / RFID / Wi-Fi</span>
+        <span class="visual-brand">ANDA LÁ</span>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>

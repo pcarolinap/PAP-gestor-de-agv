@@ -1,0 +1,41 @@
+A fazer, considerar e perguntas
+
+DASHBOARD
+-FEITO no fundo da barra lateral na parte em que fala sobre a localização do AGV a medida que ele se move e entra numa nova zona deve ser alterado la tambem o seu lugar
+
+- no dashboard tem la sobre a eficiencia, considerar se devemos manter ou nn e se sim como vaio ser calculada ?? a eficiencia
+
+-RETIRADO considerar a imoportancia do Telemetria do AGV no dashboard
+
+-A PERGUNTAR na top bar dahboard como vamos buscar a informação da bateria e dos  dBm (??)
+
+- ao criar uma nova tarefa de transporte será automaticamente escolhida uma rota para que isso acontecça, das que ja estam predefinidas ou deve ser acrescentada uma nova rota? se for das predefinidas como é que ele vai escolher essa rota automatoicamente? ou vamos nos escolhe-la ao criar?
+
+- CRIADA NA ABA DAS CAI8XAS UMA OPÇÃO DE AS CRIARao criar uma nova tarefa na parte de escolher a caixa das peças, deve haver uma opção para que se acrecente uma nova caixa? ou mantem se apenas as predefinidas?
+
+- e se quisermos criar uma tarefa,  mas nn implementá.la logo de seguida? devemos criar uma parte na gestao de tarefas para isso? e ao crirar uma opção para escolher se queremos logo ou nao?
+
+-FEITO ZONA DE CARREGAMENTO o agv deve ter um ponto de partida especifico?
+
+- para que serve o botao de emergencia? oque ele limita? e se for ativado durante o movimento do agv?
+- FEITO ao ser interropida a tarefa com a emergia deve continuar apos a emergencia ser desaivada
+- depois do agv realizar a tarefa, podemos mandá-lo para o suposto ponto de partida se ele tiver? e ent ele sempre começar ai?
+ESTAÇÃO DE CARGA! CARREGA O AGV
+
+MAPA
+
+- adicionaer a opção de acrescetar locaia
+
+GESTAO DE tarefas
+-faria sentido acrescentar uma opção aqui para criar uma nova tarefa que nn quermos executar logo de seguida? e na parte onde estiver o ESTADO dela ter a opção de ao cliar começar a tarefa?
+
+CAIXAS E RFID
+-FEITO acrescentar opção de elimitar e editar caixas
+
+ADMINISTRAÇÃO
+- acrecentar uma parte da gestao dos ultilizadores e criar novos
+- em algum lugr da tela colocar algo sobre o carg, se é admin, operador etc
+- dependendo da conta em que o utiloizador fizer loogin, na aba de administração, na parte de Perfil & Credenciais de Acesso deve ser automaticamente alterado
+
+GERAL
+-alterar o icon

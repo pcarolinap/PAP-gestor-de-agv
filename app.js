@@ -53,8 +53,17 @@ class App {
     routeSelect.disabled = false;
   }
 
-  init() {
-    this.loadCurrentUserFromSession();
+  async init() {
+    if (!(await this.loadCurrentUserFromSession())) return;
+    store.state.users = [];
+    if (this.isAdministrator()) {
+      try {
+        await this.loadUsersFromDatabase();
+      } catch (error) {
+        console.error('Não foi possível carregar os utilizadores da base de dados:', error);
+        this.showToast('Não foi possível carregar os utilizadores da base de dados.', 'error');
+      }
+    }
 
     // 1. Inicializa o renderizador gráfico dos canvas
     const canvas = document.getElementById('factoryCanvas');
@@ -103,39 +112,79 @@ class App {
     this.showToast('Bem-vindo ao sistema ANDA LÁ — Automação Logística!', 'success');
   }
 
-  loadCurrentUserFromSession() {
-    let session = null;
+  async loadCurrentUserFromSession() {
     try {
-      const sessionData = localStorage.getItem('andaLaSession')
-        || sessionStorage.getItem('andaLaSession');
-      session = sessionData ? JSON.parse(sessionData) : null;
-    } catch (error) {
-      console.warn('Não foi possível ler a sessão do utilizador:', error);
-    }
+      const response = await fetch('auth_session.php', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' }
+      });
 
-    const username = String(session?.username || '').trim().toLowerCase();
-    this.sessionUsername = username;
-    const user = store.getUsers().find(
-      item => item.username.toLowerCase() === username && item.active
-    );
-    store.state.currentUser = user
-      ? { username: user.username, name: user.name, role: user.role }
-      : null;
+      if (response.status === 401) {
+        window.location.replace('login.html');
+        return false;
+      }
+
+      if (!response.ok) {
+        throw new Error(`O serviço de autenticação respondeu com HTTP ${response.status}.`);
+      }
+
+      const session = await response.json();
+      if (
+        session.authenticated !== true
+        || !session.user
+        || !session.user.id
+        || !session.user.email
+        || !session.user.role
+        || !session.csrfToken
+      ) {
+        throw new Error('A resposta do serviço de autenticação é inválida.');
+      }
+
+      this.sessionUsername = String(session.user.email).trim().toLowerCase();
+      this.csrfToken = String(session.csrfToken || '');
+      store.state.currentUser = {
+        id: String(session.user.id),
+        username: this.sessionUsername,
+        name: String(session.user.name),
+        role: String(session.user.role)
+      };
+      return true;
+    } catch (error) {
+      console.error('Não foi possível validar a sessão do utilizador:', error);
+      window.location.replace('login.html?error=unavailable');
+      return false;
+    }
   }
 
   isAdministrator() {
-    const user = store.getUsers().find(
-      item => item.username.toLowerCase() === this.sessionUsername && item.active
-    );
-    store.state.currentUser = user
-      ? { username: user.username, name: user.name, role: user.role }
-      : null;
-    return user?.role === 'Administrador';
+    return String(store.state.currentUser?.role || '').toLowerCase() === 'administrador';
   }
 
   isAuthenticated() {
-    this.isAdministrator();
-    return Boolean(store.state.currentUser);
+    return Boolean(store.state.currentUser?.id);
+  }
+
+  async loadUsersFromDatabase() {
+    const response = await fetch('users.php', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' }
+    });
+    const result = await response.json();
+
+    if (!response.ok || !Array.isArray(result.users)) {
+      throw new Error(result.error || `Pedido recusado (HTTP ${response.status}).`);
+    }
+
+    store.state.users = result.users.map(user => ({
+      id: String(user.id),
+      username: String(user.email),
+      name: String(user.name),
+      role: String(user.role),
+      active: true
+    }));
+    store.saveState();
   }
 
   /**
@@ -429,69 +478,143 @@ class App {
     const modalUser = document.getElementById('modalUser');
     const formUser = document.getElementById('formUser');
     const usersTableBody = document.getElementById('usersTableBody');
+    const userPasswordInput = document.getElementById('userPassword');
     this.editingUserId = null;
 
     if (btnNewUser && modalUser) {
       btnNewUser.addEventListener('click', () => {
         this.editingUserId = null;
         formUser.reset();
-        document.getElementById('userActive').value = 'true';
+        userPasswordInput.required = true;
+        userPasswordInput.placeholder = '';
         document.getElementById('userModalTitle').textContent = 'Criar Utilizador';
+        formUser.querySelector('button[type="submit"]').textContent = 'Guardar Utilizador';
         modalUser.classList.add('open');
       });
     }
 
     if (usersTableBody && modalUser) {
-      usersTableBody.addEventListener('click', event => {
+      usersTableBody.addEventListener('click', async event => {
         const button = event.target.closest('button[data-user-action]');
-        if (!button) return;
-        const userId = button.dataset.userId;
-        const user = store.getUsers().find(item => item.id === userId);
+        if (!button || !this.isAdministrator()) return;
+
+        const user = store.getUsers().find(item => item.id === button.dataset.userId);
         if (!user) return;
 
         if (button.dataset.userAction === 'edit') {
           this.editingUserId = user.id;
           document.getElementById('userUsername').value = user.username;
           document.getElementById('userName').value = user.name;
-          document.getElementById('userPassword').value = user.password;
           document.getElementById('userRole').value = user.role;
-          document.getElementById('userActive').value = String(user.active);
+          userPasswordInput.value = '';
+          userPasswordInput.required = false;
+          userPasswordInput.placeholder = 'Deixe vazio para manter a palavra-passe atual';
           document.getElementById('userModalTitle').textContent = `Editar ${user.username}`;
+          formUser.querySelector('button[type="submit"]').textContent = 'Guardar alterações';
           modalUser.classList.add('open');
-        } else if (button.dataset.userAction === 'remove' && window.confirm(`Remover o utilizador ${user.username}?`)) {
-          const removed = store.removeUser(user.id);
-          this.showToast(removed ? 'Utilizador removido.' : 'Não foi possível remover o utilizador.', removed ? 'success' : 'error');
+          return;
+        }
+
+        if (
+          button.dataset.userAction !== 'remove'
+          || !window.confirm(`Remover permanentemente o utilizador ${user.username}?`)
+        ) return;
+
+        button.disabled = true;
+        try {
+          const response = await fetch(`users.php?id=${encodeURIComponent(user.id)}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+              Accept: 'application/json',
+              'X-CSRF-Token': this.csrfToken
+            }
+          });
+          const result = await response.json();
+          if (!response.ok || result.deleted !== true) {
+            throw new Error(result.error || `Pedido recusado (HTTP ${response.status}).`);
+          }
+
+          store.removeUser(user.id);
+          this.showToast('Utilizador removido da base de dados.', 'success');
+        } catch (error) {
+          console.error('Não foi possível remover o utilizador:', error);
+          this.showToast('Não foi possível remover o utilizador da base de dados.', 'error');
+          button.disabled = false;
         }
       });
     }
 
     if (formUser && modalUser) {
-      formUser.addEventListener('submit', event => {
+      formUser.addEventListener('submit', async event => {
         event.preventDefault();
-        const username = document.getElementById('userUsername').value.trim().toLowerCase();
+        if (!this.isAdministrator()) {
+          this.showToast('Só um administrador pode criar utilizadores.', 'error');
+          return;
+        }
+
+        const email = document.getElementById('userUsername').value.trim().toLowerCase();
         const name = document.getElementById('userName').value.trim();
         const password = document.getElementById('userPassword').value;
         const role = document.getElementById('userRole').value;
-        const active = document.getElementById('userActive').value === 'true';
+        const editingUserId = this.editingUserId;
+        const submitButton = formUser.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
 
-        if (!username || !name || password.length < 6) {
-          this.showToast('Preencha corretamente todos os campos e utilize uma palavra-passe com pelo menos 6 caracteres.', 'error');
-          return;
+        try {
+          const response = await fetch(
+            editingUserId ? `users.php?id=${encodeURIComponent(editingUserId)}` : 'users.php',
+            {
+              method: editingUserId ? 'PUT' : 'POST',
+              credentials: 'same-origin',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': this.csrfToken
+              },
+              body: JSON.stringify({ email, name, password, role })
+            }
+          );
+          const result = await response.json();
+
+          if (response.status === 409) {
+            this.showToast('Já existe um utilizador com esse e-mail.', 'error');
+            return;
+          }
+          if (!response.ok || !result.user) {
+            throw new Error(result.error || `Pedido recusado (HTTP ${response.status}).`);
+          }
+
+          const user = {
+            id: String(result.user.id),
+            username: String(result.user.email),
+            name: String(result.user.name),
+            role: String(result.user.role),
+            active: true
+          };
+          if (editingUserId) {
+            const userIndex = store.state.users.findIndex(item => item.id === editingUserId);
+            if (userIndex === -1) throw new Error('O utilizador atualizado não existe na lista atual.');
+            store.state.users[userIndex] = user;
+          } else {
+            store.state.users.unshift(user);
+          }
+          store.saveState();
+          this.showToast(
+            editingUserId ? 'Utilizador atualizado na base de dados.' : 'Utilizador criado e guardado na base de dados.',
+            'success'
+          );
+          modalUser.classList.remove('open');
+          formUser.reset();
+          userPasswordInput.required = true;
+          userPasswordInput.placeholder = '';
+          this.editingUserId = null;
+        } catch (error) {
+          console.error('Não foi possível guardar o utilizador:', error);
+          this.showToast('Não foi possível guardar o utilizador na base de dados.', 'error');
+        } finally {
+          submitButton.disabled = false;
         }
-
-        const result = this.editingUserId
-          ? store.updateUser(this.editingUserId, { username, name, password, role, active })
-          : store.addUser({ username, name, password, role, active });
-
-        if (!result && !this.editingUserId) {
-          this.showToast('Já existe um utilizador com esse identificador.', 'error');
-          return;
-        }
-
-        this.showToast(this.editingUserId ? 'Utilizador atualizado.' : 'Utilizador criado.', 'success');
-        modalUser.classList.remove('open');
-        formUser.reset();
-        this.editingUserId = null;
       });
     }
 
@@ -805,6 +928,8 @@ class App {
     createTaskButtons.forEach(button => {
       if (button) button.hidden = !isAdministrator;
     });
+    const createUserButton = document.getElementById('btnNewUser');
+    if (createUserButton) createUserButton.hidden = !isAdministrator;
 
     document.querySelectorAll('.btn-e-stop').forEach(button => {
       const emergencyActive = agvSimulator.emergencyStopActive;
@@ -1057,23 +1182,22 @@ class App {
     if (!tbody) return;
 
     if (users.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-dim);">Nenhum utilizador registado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-dim);">Nenhum utilizador registado.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = users.map(user => `
       <tr>
-        <td class="mono"><strong>${user.username}</strong></td>
-        <td>${user.name}</td>
-        <td><span class="status-badge online">${user.role}</span></td>
-        <td class="mono">${user.password}</td>
-        <td><span class="status-badge ${user.active ? 'online' : 'error'}">${user.active ? 'Ativo' : 'Inativo'}</span></td>
+        <td class="mono"><strong>${this.escapeHTML(user.username)}</strong></td>
+        <td>${this.escapeHTML(user.name)}</td>
+        <td><span class="status-badge online">${this.escapeHTML(user.role)}</span></td>
+        <td><span class="status-badge online">Registado</span></td>
         <td>
           <div class="box-actions">
-            <button type="button" class="btn btn-secondary" data-user-action="edit" data-user-id="${user.id}" title="Editar utilizador" aria-label="Editar ${user.username}">
+            <button type="button" class="btn btn-secondary" data-user-action="edit" data-user-id="${this.escapeHTML(user.id)}" title="Editar utilizador" aria-label="Editar ${this.escapeHTML(user.username)}">
               <i class="ph-bold ph-pencil-simple"></i>
             </button>
-            <button type="button" class="btn btn-danger" data-user-action="remove" data-user-id="${user.id}" title="Remover utilizador" aria-label="Remover ${user.username}">
+            <button type="button" class="btn btn-danger" data-user-action="remove" data-user-id="${this.escapeHTML(user.id)}" title="Remover utilizador" aria-label="Remover ${this.escapeHTML(user.username)}">
               <i class="ph-bold ph-trash"></i>
             </button>
           </div>

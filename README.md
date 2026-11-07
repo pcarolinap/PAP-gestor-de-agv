@@ -60,29 +60,28 @@ O objetivo principal é substituir o transporte manual de caixas de componentes 
 
 ## 🚀 Como Executar o Projeto
 
-### Opção A: Executar a aplicação Web localmente
-Os módulos JavaScript ES6 precisam de ser servidos por HTTP; abrir `index.html` diretamente (`file://`) pode bloquear o carregamento da aplicação.
+### Opção A: Executar a aplicação Web com XAMPP
+O login e a sessão do dashboard são tratados em PHP e precisam do Apache e MySQL do XAMPP; Live Server, Python `http.server` e abrir `index.php` diretamente não executam estes endpoints.
 
-**No VS Code:** instalar a extensão **Live Server**, clicar com o botão direito em `index.html` e selecionar **Open with Live Server**.
+1. Colocar a pasta em `C:\xampp\htdocs\PAP-gestor-de-agv`.
+2. Iniciar **Apache** e **MySQL** no XAMPP Control Panel.
+3. Criar/configurar a base de dados `andala_pap` e a tabela `utilizadores` com as colunas `id`, `nome`, `email`, `password_hash` e `perfil`.
+4. Criar cada conta na tabela com uma palavra-passe guardada como hash PHP (`password_hash`), nunca em texto simples.
+5. Abrir `http://localhost/PAP-gestor-de-agv/login.html`.
 
-**Em alternativa, com Python instalado:**
-1. Abrir um terminal na pasta do projeto.
-2. Iniciar um servidor HTTP local:
-   ```bash
-   py -m http.server 8000
-   ```
-   Em sistemas sem o comando `py`, utilizar `python -m http.server 8000`.
-3. Abrir `http://localhost:8000` no navegador.
+O acesso ao dashboard só é concedido com uma sessão criada após validar a conta na base de dados. A interface do AGV mantém a simulação quando o ESP32 está desligado.
 
-A aplicação funciona em **Modo de Simulação Autónoma Integrada** sem precisar do backend Node.js nem do ESP32.
+Na secção Administração, a consulta, criação, edição e remoção de utilizadores são processadas por `users.php`; apenas uma sessão de administrador pode gerir contas. As palavras-passe são armazenadas com `password_hash` e nunca são devolvidas à interface. O próprio utilizador autenticado não pode remover a sua conta.
 
 ### Opção B: Executar o Backend Server Node.js
 ```bash
-cd server
+cd C:\xampp\htdocs\PAP-gestor-de-agv
 npm install
 npm start
 ```
 O servidor REST API ficará acessível em `http://localhost:3000/api/status`.
+
+O backend e o frontend são processos separados. A interface funciona em modo de simulação sem o backend Node.js. O `test_db.php` apenas testa a ligação MySQL configurada em `config/db.php`; no XAMPP, iniciar o MySQL e criar a base de dados `andala_pap` antes de abrir `http://localhost/PAP-gestor-de-agv/test_db.php`.
 
 ### Opção C: Carregar Código no ESP32 (Equipa de Mecatrónica)
 1. Abrir o ficheiro `hardware/esp32_anda_la.ino` no **Arduino IDE**.
@@ -95,19 +94,20 @@ O servidor REST API ficará acessível em `http://localhost:3000/api/status`.
 ## 📑 Estrutura de Ficheiros
 
 ```
-PAP/
-├── index.html                  # Interface Principal SPA (HTML5)
+PAP-gestor-de-agv/
+├── index.php                   # Interface principal protegida por sessão PHP
 ├── css/
-│   └── style.css               # Design System Industrial Dark Glassmorphism
-├── js/
-│   ├── app.js                  # Controlar Principal da Interface & Eventos
-│   ├── store.js                # Gestão de Estado Persistente (IndexedDB/LocalStorage)
-│   ├── agv-simulator.js        # Motor Físico de Navegação Autónoma do AGV
-│   ├── factory-map.js          # Renderizador Canvas 2D do Mapa da Oficina
-│   └── api-client.js           # Bridge de Comunicação com ESP32 / REST API
-├── server/
-│   ├── package.json            # Configuração Node.js
-│   └── index.js                # Backend Server REST API & Express
+│   ├── style.css               # Estilos da interface principal
+│   └── login.css               # Estilos da página de acesso
+├── app.js                      # Controlador principal da interface
+├── store.js                    # Estado persistente (LocalStorage)
+├── agv-simulator.js            # Simulador de navegação do AGV
+├── factory-map.js              # Renderizador Canvas 2D do mapa
+├── api-client.js               # Comunicação com o ESP32
+├── index.js                    # Backend REST API Express
+├── config/
+│   └── db.php                  # Configuração MySQL do XAMPP
+├── test_db.php                 # Teste da ligação MySQL
 ├── hardware/
 │   └── esp32_anda_la.ino       # Firmware C++/Arduino para o Módulo ESP32
 └── README.md                   # Documentação Completa do Projeto

@@ -146,38 +146,8 @@ const defaultState = {
     { id: 'ALT-01', level: 'warning', title: 'Manutenção de Rotina', message: 'Verificação dos sensores óticos agendada para 20/09.', active: true, time: 'Há 2h' }
   ],
 
-  currentUser: {
-    username: 'admin',
-    name: 'Eng. Mecatrónica / Informática',
-    role: 'Administrador'
-  },
-
-  users: [
-    {
-      id: 'user-admin',
-      username: 'admin@andalala.pt',
-      name: 'Eng. Mecatrónica / Informática',
-      password: 'admin123',
-      role: 'Administrador',
-      active: true
-    },
-    {
-      id: 'user-operador',
-      username: 'operador@andalala.pt',
-      name: 'Operador de Logística',
-      password: 'operador123',
-      role: 'Operador',
-      active: true
-    },
-    {
-      id: 'user-supervisor',
-      username: 'supervisor@andalala.pt',
-      name: 'Supervisor de Operações',
-      password: 'supervisor123',
-      role: 'Supervisor',
-      active: true
-    }
-  ]
+  currentUser: null,
+  users: []
 };
 
 class Store {

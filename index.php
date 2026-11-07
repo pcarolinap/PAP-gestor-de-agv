@@ -1,3 +1,15 @@
+<?php
+session_start();
+
+// Se não existir uma sessão ativa, impede a entrada e reencaminha para o login
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.html");
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="pt">
+...
 <!DOCTYPE html>
 <html lang="pt">
 
@@ -506,7 +518,6 @@
                       <th>Utilizador</th>
                       <th>Nome</th>
                       <th>Cargo</th>
-                      <th>Credencial</th>
                       <th>Estado</th>
                       <th>Ações</th>
                     </tr>
@@ -548,13 +559,6 @@
             <option value="Operador">Operador</option>
             <option value="Supervisor">Supervisor</option>
             <option value="Administrador">Administrador</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="userActive">Estado</label>
-          <select id="userActive" class="form-control">
-            <option value="true">Activo</option>
-            <option value="false">Inativo</option>
           </select>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
@@ -704,7 +708,7 @@
   <div id="toastContainer"></div>
 
   <!-- Carregamento dos Módulos JavaScript ES6 -->
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="app.js?v=4"></script>
 </body>
 
 </html>

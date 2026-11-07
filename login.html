@@ -30,14 +30,14 @@
         <p>Identifique-se com o seu identificador. O cargo será atribuído pelo administrador.</p>
       </div>
 
-      <form id="loginForm" novalidate>
+      <form id="loginForm" action="login.php" method="post">
         <div class="form-group">
-          <label for="username">Identificador</label>
+          <label for="email">E-mail</label>
           <div class="input-wrap">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0"/></svg>
-            <input id="username" name="username" type="text" autocomplete="username" placeholder="Ex.: operador1" minlength="3" required>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="nome@exemplo.pt" required>
           </div>
-          <small class="field-error" id="usernameError"></small>
+          <small class="field-error" id="emailError"></small>
         </div>
 
         <div class="form-group">
@@ -58,9 +58,9 @@
         </div>
 
         <label class="remember-row">
-          <input id="rememberSession" type="checkbox" checked>
+          <input id="rememberSession" name="remember_me" type="checkbox" value="1">
           <span class="custom-checkbox" aria-hidden="true"></span>
-          <span>Manter sessão activa neste dispositivo</span>
+          <span>Manter sessão ativa neste dispositivo</span>
         </label>
 
         <button class="login-button" type="submit">
@@ -70,46 +70,6 @@
 
         <div class="form-message" id="formMessage" role="alert" aria-live="polite"></div>
       </form>
-
-
-
-
-        <!-- CONTAS PROVISORIAS -->
-      <section class="demo-accounts" aria-labelledby="demo-accounts-title">
-        <div class="demo-accounts-heading">
-          <div>
-            <p class="section-kicker">Acesso provisório</p>
-            <h3 id="demo-accounts-title">Contas de demonstração</h3>
-          </div>
-          <span>Sem seleção de cargo</span>
-        </div>
-        <div class="demo-account-list">
-          <button class="demo-account" type="button" data-username="admin@andalala.pt" data-password="admin123">
-            <span class="demo-account-role">Administrador</span>
-            <strong>admin@andalala.pt</strong>
-            <small>admin123</small>
-          </button>
-          <button class="demo-account" type="button" data-username="operador@andalala.pt" data-password="operador123">
-            <span class="demo-account-role">Operador</span>
-            <strong>operador@andalala.pt</strong>
-            <small>operador123</small>
-          </button>
-          <button class="demo-account" type="button" data-username="supervisor@andalala.pt" data-password="supervisor123">
-            <span class="demo-account-role">Supervisor</span>
-            <strong>supervisor@andalala.pt</strong>
-            <small>supervisor123</small>
-          </button>
-        </div>
-        <p class="demo-disclaimer">Estas contas são apenas para demonstração. Os cargos reais devem ser definidos pelo administrador.</p>
-      </section>
-
-     <!-- CONTAS PROVISORIAS -->
-
-
-
-
-
-
       <p class="copyright">© 2026 ANDA LÁ · Sistema de automação logística</p>
     </section>
 
@@ -148,6 +108,6 @@
     </aside>
   </main>
 
-  <script type="module" src="js/login.js"></script>
+  <script src="login.js?v=3" defer></script>
 </body>
 </html>
